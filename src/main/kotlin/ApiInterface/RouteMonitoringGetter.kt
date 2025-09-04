@@ -16,22 +16,20 @@ import okhttp3.Response
 class OkHttpRequest(
     private val httpClient: OkHttpClient,
 ) {
-    fun GET(url: String, callback: Callback): Call {
+    fun GET(url: String, callback: Callback): Response {
         val request = Request.Builder().url(url).build()
         val call = httpClient.newCall(request)
-        call.enqueue(callback)
-        return call
+        return call.execute()
     }
 
-    fun POST(url: String, parameters: HashMap<String, String>, callback: Callback): Call {
+    fun POST(url: String, parameters: HashMap<String, String>, callback: Callback): Response {
         val formBuilder = FormBody.Builder()
         parameters.entries.forEach { formBuilder.add(it.key, it.value) }
         val formBody = formBuilder.build()
         val request = Request.Builder().url(url).post(formBody).build()
 
         val call = httpClient.newCall(request)
-        call.enqueue(callback)
-        return call
+        return call.execute()
     }
 }
 
@@ -58,11 +56,11 @@ class RouteMonitoringGetter(
             override fun onFailure(call: Call, e: IOException) {
                 println("We have a failure: $e")
             }
-        }).execute()
+        })
     }
 
     fun listAllRoutes(): Response {
-        val url = "https//api.tomtom.com/routemonitoring/3/routes?key=${apiKey}"
+        val url = "https://api.tomtom.com/routemonitoring/3/routes?key=${apiKey}"
         return httpRequest.GET(url = url, callback = object: Callback {
             override fun onResponse(call: Call, response: Response) {
                 println("All routes: ${response.body()}")
@@ -70,7 +68,7 @@ class RouteMonitoringGetter(
             override fun onFailure(call: Call, e: IOException) {
                 println("Failed to get all routs: $e")
             }
-        }).execute()
+        })
     }
 
     fun getRouteUpdate(routeId: RouteId): Response {
@@ -82,7 +80,7 @@ class RouteMonitoringGetter(
             override fun onFailure(call: Call, e: IOException) {
                 println("Failed to fetch route with routeId: ${routeId.uniqueId.id} - $e")
             }
-        }).execute()
+        })
     }
 
     private fun GeoPoint.toJsonObject() = buildJsonObject {

@@ -1,5 +1,6 @@
 package io.ktor.samples.kodein
 
+import ApiInterface.RouteMonitoringGetter
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -45,11 +46,17 @@ fun Application.myKodeinApp() = myKodeinApp(DI {
  */
 fun Application.myKodeinApp(kodein: DI) {
     val random by kodein.instance<Random>()
+    val getter = RouteMonitoringGetter(apiKey = apiKey)
 
     routing {
         get("/") {
             val range = 0 until 100
             call.respondText("Random number in $range: ${random[range]}")
+        }
+        get("/rui") {
+            val response = getter.listAllRoutes().body()?.string()
+
+            call.respondText(response.body()?.string().toString())
         }
     }
 }

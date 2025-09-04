@@ -1,5 +1,8 @@
 package libs
 
+import java.time.ZonedDateTime
+import kotlin.time.Duration
+
 interface Failure{
     val errorMessage: String
 }
@@ -22,4 +25,18 @@ data class RouteId(
 
 data class RouteData(
     val amountOfTraffic: List<Unit>,
+)
+
+data class RouteStatus(
+    val routeId: RouteId,
+    val routeName: String,
+    val routeStatus: String,
+    val waypoints: List<GeoPoint>,
+    val travelTimeSeconds: Int,
+    val createdAt: ZonedDateTime,
+    val delayTimeSeconds: Int,
+    val passable: Boolean,
+    val routeLengthMeters: Int,
+    val completeness: Int,
+    val typicalTravelTimeCoverage: Int,
 )
