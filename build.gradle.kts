@@ -23,8 +23,8 @@ dependencies {
     implementation("io.ktor:ktor-server-default-headers")
     implementation("io.ktor:ktor-server-html-builder")
     implementation("org.kodein.di:kodein-di-jvm:7.17.0")
-    implementation("com.tomtom.sdk.routing:routing-impl:1.26.0-rc13")
     implementation("ch.qos.logback:logback-classic:$logback_version")
+    implementation(libs.gosdk.routing.impl)
     testImplementation("io.ktor:ktor-server-test-host-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

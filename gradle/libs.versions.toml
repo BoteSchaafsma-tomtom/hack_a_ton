@@ -1,5 +1,7 @@
 [versions]
 kotlin = "2.1.21"
+gosdk = "1.26.0-rc13"
 
 [libraries]
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gosdk-routing-impl = { module = "com.tomtom.sdk.routing:routing-impl", version.ref = "gosdk" }
