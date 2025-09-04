@@ -24,7 +24,10 @@ dependencies {
     implementation("io.ktor:ktor-server-html-builder")
     implementation("org.kodein.di:kodein-di-jvm:7.17.0")
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation(libs.gosdk.routing.impl)
+//    implementation(libs.gosdk.routing.impl)
+    implementation(libs.kotlin.result)
+    implementation(libs.requests.okhttp)
+    implementation(libs.kotlin.serialization)
     testImplementation("io.ktor:ktor-server-test-host-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
