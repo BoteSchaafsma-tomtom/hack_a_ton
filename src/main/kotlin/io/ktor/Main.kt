@@ -1,5 +1,6 @@
 package io.ktor
 
+import ApiInterface.RouteMonitoringGetter
 import com.urbanairship.api.client.UrbanAirshipClient
 import com.urbanairship.api.push.PushRequest
 import com.urbanairship.api.push.model.DeviceType.ANDROID
@@ -9,20 +10,29 @@ import com.urbanairship.api.push.model.audience.Selectors
 import com.urbanairship.api.push.model.notification.Notification
 import com.urbanairship.api.push.model.notification.android.AndroidDevicePayload
 import com.urbanairship.api.push.model.notification.android.BigPictureStyle
+import io.ktor.http.decodeURLPart
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import libs.CreateRouteParameters
 import model.User
+import org.jetbrains.kotlin.com.google.gson.Gson
+import org.jetbrains.kotlin.com.google.gson.JsonParseException
+import org.jetbrains.kotlin.com.google.gson.JsonSyntaxException
 import org.kodein.di.DI
+
+private val channelIdToRouteId = HashMap<String, Long>()
 
 fun main() {
     embeddedServer(
@@ -43,6 +53,8 @@ fun Application.myApplication(application: DI) {
     install(ContentNegotiation) {
         json()
     }
+    val getter = RouteMonitoringGetter(apiKey = route_monitoring_api_key)
+
     routing {
         post("/user") {
             val user = call.receive<User>()
@@ -51,7 +63,39 @@ fun Application.myApplication(application: DI) {
             call.respond("User received: ${user.airshipId}")
             sendTestNotification(user.airshipId)
         }
+        post(path = "/createRoute") { handleCreateRoute(call.receiveText(), getter) }
     }
+}
+
+private fun handleCreateRoute(receivedText: String, getter: RouteMonitoringGetter) {
+    try {
+        val jsonString = receivedText.substring(4).decodeURLPart()
+        val routeParameters = Gson().fromJson(jsonString, CreateRouteParameters::class.java)
+        val response = getter.createRoute(
+            "home_work_combination",
+            listOf(routeParameters.start, routeParameters.destination)
+        )
+        if (response.code() != 200) {
+            println("Response failed with code: ${response.code()}")
+            return
+        }
+        val matchResult = response.body()?.string()?.let { body ->
+            val pattern = Regex("\"routeId\":([0-9]+),")
+            return@let pattern.find(body)
+        }
+        val routeId = matchResult?.groupValues?.takeIf { it.isNotEmpty() }?.get(1)
+        println("Created route with id '$routeId' and channel id '${routeParameters.channelId}'")
+        routeId?.let { channelIdToRouteId[routeParameters.channelId] = it.toLong() }
+    } catch (e: BadRequestException) {
+        println("Error: bad request: $e")
+    } catch (e: JsonParseException) {
+        println("Error: json parse exception: $e")
+    } catch (e: JsonSyntaxException) {
+        println("Error: json syntax exception: $e")
+    } catch (e: IllegalStateException) {
+        println("Error: illegal state exception: $e")
+    }
+
 }
 
 val client: UrbanAirshipClient? by lazy {

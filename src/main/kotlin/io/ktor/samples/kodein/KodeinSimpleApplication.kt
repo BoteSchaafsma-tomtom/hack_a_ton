@@ -3,28 +3,19 @@ package io.ktor.samples.kodein
 import ApiInterface.RouteMonitoringGetter
 import ApiInterface.hasAnomalies
 import ApiInterface.toRouteStatus
-import io.ktor.http.decodeURLPart
 import io.ktor.route_monitoring_api_key
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.plugins.BadRequestException
-import io.ktor.server.request.receiveText
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import libs.CreateRouteParameters
-import org.jetbrains.kotlin.com.google.gson.Gson
-import org.jetbrains.kotlin.com.google.gson.JsonParseException
-import org.jetbrains.kotlin.com.google.gson.JsonSyntaxException
 import org.kodein.di.DI
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.time.Duration.Companion.seconds
 
-private val channelIdToRouteId = HashMap<String, Long>()
 
 /**
  * An entry point of the embedded-server program:
@@ -79,35 +70,6 @@ fun Application.myKodeinApp(kodein: DI) {
         get("/listAll") {
             val response = getter.listAllRoutes().body()?.string()?.toRouteStatus()
             call.respondText(response.toString())
-        }
-        post(path = "/createRoute") {
-            try {
-                val jsonString = call.receiveText().substring(4).decodeURLPart()
-                val routeParameters = Gson().fromJson(jsonString, CreateRouteParameters::class.java)
-                val response = getter.createRoute(
-                    "home_work_combination",
-                    listOf(routeParameters.start, routeParameters.destination)
-                )
-                if (response.code() != 200) {
-                    println("Response failed with code: ${response.code()}")
-                    return@post
-                }
-                val matchResult = response.body()?.string()?.let { body ->
-                    val pattern = Regex("\"routeId\":([0-9]+),")
-                    return@let pattern.find(body)
-                }
-                val routeId = matchResult?.groupValues?.takeIf { it.isNotEmpty() }?.get(1)
-                println("Created route with id '$routeId' and channel id '${routeParameters.channelId}'")
-                routeId?.let { channelIdToRouteId[routeParameters.channelId] = it.toLong() }
-            } catch (e: BadRequestException) {
-                println("Error: bad request: $e")
-            } catch (e: JsonParseException) {
-                println("Error: json parse exception: $e")
-            } catch (e: JsonSyntaxException) {
-                println("Error: json syntax exception: $e")
-            } catch (e: IllegalStateException) {
-                println("Error: illegal state exception: $e")
-            }
         }
     }
 }
