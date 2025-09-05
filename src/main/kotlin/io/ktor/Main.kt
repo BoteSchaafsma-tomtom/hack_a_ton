@@ -37,9 +37,14 @@ import org.jetbrains.kotlin.com.google.gson.Gson
 import org.jetbrains.kotlin.com.google.gson.JsonParseException
 import org.jetbrains.kotlin.com.google.gson.JsonSyntaxException
 import org.kodein.di.DI
+import java.time.ZonedDateTime
 import kotlin.time.Duration.Companion.seconds
 
+// routeId to channelId
 private val channelIdToRouteId = HashMap<Long, String>()
+
+// routeId to timeStamp
+private val lastNotificationTime = HashMap<Long, ZonedDateTime>()
 
 fun main() {
     println("Calling cron job")
@@ -124,13 +129,20 @@ fun CoroutineScope.launchCronJobs() {
             delay(20.seconds)
             val routeStatusList = getter.listAllRoutes().body()?.string()?.toRouteStatus()
             println("Starting round: ${routeStatusList?.size}")
+
             routeStatusList?.forEach { routeStatus ->
+                val moreThan20MinAgo = lastNotificationTime[routeStatus.routeId]?.let { it.plusMinutes(20) < ZonedDateTime.now() }
+                moreThan20MinAgo?.takeIf { it }?.let { lastNotificationTime.remove(routeStatus.routeId) }
+
                 println("Checking for anomalies: ${routeStatus.routeId}")
+
                 if (routeStatus.hasAnomalies()) {
                     println("Found anomalies: ${routeStatus.routeId}")
+
                     channelIdToRouteId[routeStatus.routeId]?.let { channelId ->
                         println("Sending with response: ${sendNotification(channelId)}")
                     }
+                    lastNotificationTime[routeStatus.routeId] = ZonedDateTime.now()
                 }
             }
         }
