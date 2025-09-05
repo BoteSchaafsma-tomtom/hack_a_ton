@@ -4,6 +4,7 @@ import ApiInterface.RouteMonitoringGetter
 import ApiInterface.hasAnomalies
 import ApiInterface.toRouteStatus
 import io.ktor.http.decodeURLPart
+import io.ktor.route_monitoring_api_key
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -73,7 +74,7 @@ fun CoroutineScope.launchCronJobs(getter: RouteMonitoringGetter) {
  * instead of the default mappings.
  */
 fun Application.myKodeinApp(kodein: DI) {
-    val getter = RouteMonitoringGetter(apiKey = apiKey)
+    val getter = RouteMonitoringGetter(apiKey = route_monitoring_api_key)
     routing {
         get("/listAll") {
             val response = getter.listAllRoutes().body()?.string()?.toRouteStatus()
