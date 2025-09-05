@@ -2,7 +2,6 @@ package io.ktor
 
 import com.urbanairship.api.client.UrbanAirshipClient
 import com.urbanairship.api.push.PushRequest
-import com.urbanairship.api.push.model.DeviceType
 import com.urbanairship.api.push.model.DeviceType.ANDROID
 import com.urbanairship.api.push.model.DeviceTypeData
 import com.urbanairship.api.push.model.PushPayload
