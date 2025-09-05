@@ -4,6 +4,7 @@ gosdk = "1.26.0-rc13"
 kotlinresult = "1.1.20"
 okhttp =  "3.10.0"
 kotlinserialization = "1.8.1"
+coroutines-android = "1.10.2"
 
 [libraries]
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -11,3 +12,4 @@ gosdk-routing-impl = { module = "com.tomtom.sdk.routing:routing-impl", version.r
 kotlin-result = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinresult" }
 requests-okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 kotlin-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinserialization" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines-android" }

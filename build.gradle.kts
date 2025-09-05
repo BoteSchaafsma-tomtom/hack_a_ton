@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.kotlin.result)
     implementation(libs.requests.okhttp)
     implementation(libs.kotlin.serialization)
+//    implementation(libs.kotlinx.coroutines.android)
     testImplementation("io.ktor:ktor-server-test-host-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
