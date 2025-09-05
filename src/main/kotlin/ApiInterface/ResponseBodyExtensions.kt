@@ -10,16 +10,20 @@ import kotlin.time.Duration.Companion.minutes
 fun RouteStatus.hasAnomalies(): Boolean {
     // Can't drive route
     if (!passable) {
+        println("${this.routeId} is not passable")
         return true
     }
 
     // Route too short to tell anything.
     if (typicalTravelTimeSeconds < 6.minutes.inWholeSeconds) {
+        println("${this.routeId} is too short")
         return false
     }
 
     // More than 15% delay time.
-    return (((travelTimeSeconds - delayTimeSeconds) * 100) / delayTimeSeconds) > 15
+    val hasAnomalies = (((travelTimeSeconds - delayTimeSeconds) * 100) / delayTimeSeconds) > 15
+    println("${this.routeId} has anomalies $hasAnomalies")
+    return hasAnomalies
 }
 
 private fun IntermediateRouteStatus.toRouteStatus() = RouteStatus(

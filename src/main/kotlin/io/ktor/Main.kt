@@ -1,6 +1,8 @@
 package io.ktor
 
 import ApiInterface.RouteMonitoringGetter
+import ApiInterface.hasAnomalies
+import ApiInterface.toRouteStatus
 import com.urbanairship.api.client.UrbanAirshipClient
 import com.urbanairship.api.push.PushRequest
 import com.urbanairship.api.push.model.DeviceType.ANDROID
@@ -23,7 +25,11 @@ import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import libs.CreateRouteParameters
 import model.User
@@ -31,10 +37,14 @@ import org.jetbrains.kotlin.com.google.gson.Gson
 import org.jetbrains.kotlin.com.google.gson.JsonParseException
 import org.jetbrains.kotlin.com.google.gson.JsonSyntaxException
 import org.kodein.di.DI
+import kotlin.time.Duration.Companion.seconds
 
-private val channelIdToRouteId = HashMap<String, Long>()
+private val channelIdToRouteId = HashMap<Long, String>()
 
 fun main() {
+    println("Calling cron job")
+    CoroutineScope(Dispatchers.IO + Job()).launchCronJobs()
+
     embeddedServer(
         factory = Netty,
         port = 8080,
@@ -61,7 +71,7 @@ fun Application.myApplication(application: DI) {
             println(user)
             // Validate APID before sending notification
             call.respond("User received: ${user.airshipId}")
-            sendTestNotification(user.airshipId)
+            sendNotification(user.airshipId)
         }
         post(path = "/createRoute") { handleCreateRoute(call.receiveText(), getter) }
     }
@@ -85,7 +95,7 @@ private fun handleCreateRoute(receivedText: String, getter: RouteMonitoringGette
         }
         val routeId = matchResult?.groupValues?.takeIf { it.isNotEmpty() }?.get(1)
         println("Created route with id '$routeId' and channel id '${routeParameters.channelId}'")
-        routeId?.let { channelIdToRouteId[routeParameters.channelId] = it.toLong() }
+        routeId?.let { channelIdToRouteId[it.toLong()] = routeParameters.channelId }
     } catch (e: BadRequestException) {
         println("Error: bad request: $e")
     } catch (e: JsonParseException) {
@@ -107,8 +117,28 @@ val client: UrbanAirshipClient? by lazy {
         .build()
 }
 
+fun CoroutineScope.launchCronJobs() {
+    val getter = RouteMonitoringGetter(apiKey = route_monitoring_api_key)
+    launch {
+        while (true) {
+            delay(20.seconds)
+            val routeStatusList = getter.listAllRoutes().body()?.string()?.toRouteStatus()
+            println("Starting round: ${routeStatusList?.size}")
+            routeStatusList?.forEach { routeStatus ->
+                println("Checking for anomalies: ${routeStatus.routeId}")
+                if (routeStatus.hasAnomalies()) {
+                    println("Found anomalies: ${routeStatus.routeId}")
+                    channelIdToRouteId[routeStatus.routeId]?.let { channelId ->
+                        println("Sending with response: ${sendNotification(channelId)}")
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Make this function suspend and return a result string
-private suspend fun sendTestNotification(id: String): String =
+private suspend fun sendNotification(id: String): String =
     withContext(Dispatchers.IO) {
         // Build BigPictureStyle with the image URL
         val bigPictureStyle = BigPictureStyle

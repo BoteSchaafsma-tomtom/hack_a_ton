@@ -41,20 +41,6 @@ fun sendToAirship(routeId: Long) {
  */
 fun Application.myKodeinApp() = myKodeinApp(DI { })
 
-fun CoroutineScope.launchCronJobs(getter: RouteMonitoringGetter) {
-    launch {
-        while (true) {
-            delay(20.seconds)
-            val routeStatusList = getter.listAllRoutes().body()?.string()?.toRouteStatus()
-            routeStatusList?.forEach {
-                if (it.hasAnomalies()) {
-                    sendToAirship(it.routeId)
-                }
-            }
-        }
-    }
-}
-
 /**
  * This is the application module that has a
  * preconfigured [kodein] instance as input.
