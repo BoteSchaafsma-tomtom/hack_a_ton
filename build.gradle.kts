@@ -21,6 +21,8 @@ dependencies {
     implementation("org.kodein.di:kodein-di-jvm:7.17.0")
     implementation(libs.logback.classic)
     implementation(libs.airship)
+    implementation(libs.kotlin.result)
+    implementation(libs.requests.okhttp)
     testImplementation("io.ktor:ktor-server-test-host-jvm")
     testImplementation(libs.kotlin.test)
     implementation(libs.ktor.client.content.negotiation)
