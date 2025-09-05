@@ -1,16 +1,16 @@
 package ApiInterface
 
 import kotlinx.io.IOException
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import libs.GeoPoint
 import libs.RouteId
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.FormBody
+import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.Response
 
 class OkHttpRequest(
@@ -22,14 +22,16 @@ class OkHttpRequest(
         return call.execute()
     }
 
-    fun POST(url: String, parameters: HashMap<String, String>, callback: Callback): Response {
-        val formBuilder = FormBody.Builder()
-        parameters.entries.forEach { formBuilder.add(it.key, it.value) }
-        val formBody = formBuilder.build()
-        val request = Request.Builder().url(url).post(formBody).build()
+    fun post(url: String, jsonBody: String): Response {
+        val mediaType = MediaType.parse("application/json")
+        val requestBody: RequestBody = RequestBody.create(mediaType, jsonBody)
 
-        val call = httpClient.newCall(request)
-        return call.execute()
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        return httpClient.newCall(request).execute()
     }
 }
 
@@ -40,23 +42,11 @@ class RouteMonitoringGetter(
     private val httpRequest = OkHttpRequest(httpClient)
 
     fun createRoute(name: String, waypoints: List<GeoPoint>): Response {
-        val waypointsJsonArray = buildJsonArray {
-            for (it in waypoints) add(it.toJsonObject())
-        }
-        val parameterHashMap = hashMapOf(
-            "name" to name,
-            "pathPoints" to waypointsJsonArray.toString(),
-        )
+        val waypointsJsonArray = waypoints.map { it.toJsonObject() }.joinToString(prefix = "[", postfix = "]")
+        val jsonBody = """{"name": "$name", "pathPoints": $waypointsJsonArray}"""
         val url = "https://api.tomtom.com/routemonitoring/3/routes?key=${apiKey}"
 
-        return httpRequest.POST(url = url, parameters = parameterHashMap, callback = object: Callback {
-            override fun onResponse(call: Call, response: Response) {
-                println("We have a response: ${response.body()}")
-            }
-            override fun onFailure(call: Call, e: IOException) {
-                println("We have a failure: $e")
-            }
-        })
+        return httpRequest.post(url = url, jsonBody = jsonBody)
     }
 
     fun listAllRoutes(): Response {
